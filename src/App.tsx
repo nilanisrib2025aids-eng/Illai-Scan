@@ -15,13 +15,15 @@ import { HelpModal } from './components/HelpModal';
 import { VoiceAssistantModal } from './components/VoiceAssistantModal';
 
 export const App: React.FC = () => {
-  // Navigation tabs: 'home' | 'scan' | 'history' | 'help' | 'result' | 'login'
-  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'history' | 'help' | 'result' | 'login'>('home');
-  const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
-  const [recentScans, setRecentScans] = useState<ScanResult[]>([]);
-
   // Farmer Authentication & Profile State
   const [currentFarmer, setCurrentFarmer] = useState<FarmerProfile | null>(authService.getCurrentFarmer());
+
+  // First page of Illai Scan is 'login' if not logged in, otherwise 'home'
+  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'history' | 'help' | 'result' | 'login'>(
+    authService.isAuthenticated() ? 'home' : 'login'
+  );
+  const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
+  const [recentScans, setRecentScans] = useState<ScanResult[]>([]);
 
   // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -139,20 +141,21 @@ export const App: React.FC = () => {
           )}
         </div>
 
-        {/* Farmer-friendly Bottom Navigation Bar */}
-        <div className="h-16 bg-white border-t border-gray-200 px-4 flex items-center justify-between z-20 shrink-0 shadow-lg">
-          {/* Home */}
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center gap-1 transition cursor-pointer ${
-              activeTab === 'home'
-                ? 'text-emerald-800 font-bold'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{localization.t('nav.home')}</span>
-          </button>
+        {/* Farmer-friendly Bottom Navigation Bar - Only available after login */}
+        {currentFarmer && (
+          <div className="h-16 bg-white border-t border-gray-200 px-4 flex items-center justify-between z-20 shrink-0 shadow-lg">
+            {/* Home */}
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`flex flex-col items-center gap-1 transition cursor-pointer ${
+                activeTab === 'home'
+                  ? 'text-emerald-800 font-bold'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">{localization.t('nav.home')}</span>
+            </button>
 
           {/* History */}
           <button
@@ -204,6 +207,7 @@ export const App: React.FC = () => {
             <span className="text-[10px] tracking-tight">{localization.t('nav.help')}</span>
           </button>
         </div>
+        )}
 
         {/* Global Modals */}
         <SettingsModal

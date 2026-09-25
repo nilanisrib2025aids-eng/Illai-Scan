@@ -12,7 +12,8 @@ import {
   ArrowLeft,
   LogOut,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import type { FarmerProfile } from '../types';
@@ -161,13 +162,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     <div className="min-h-full pb-20 bg-gray-50 flex flex-col">
       {/* Top Header Bar */}
       <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3.5 flex items-center justify-between shadow-xs">
-        <button
-          onClick={onBackToHome}
-          className="flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-800 transition"
-        >
-          <ArrowLeft className="w-4 h-4 text-emerald-700" />
-          <span>Back to Farm</span>
-        </button>
+        {currentFarmer ? (
+          <button
+            onClick={onBackToHome}
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-800 transition cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 text-emerald-700" />
+            <span>Back to Farm</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="text-xs font-black tracking-tight text-gray-900">
+              ILAI SCAN
+            </span>
+          </div>
+        )}
 
         <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
           Kisan Auth Portal
@@ -313,8 +323,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             )}
 
             {errorMsg && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium animate-in fade-in">
-                {errorMsg}
+              <div className="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-800 flex items-start gap-2.5 animate-in fade-in shadow-xs">
+                <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                <div className="flex-1 font-semibold leading-relaxed">
+                  {errorMsg}
+                </div>
               </div>
             )}
 
