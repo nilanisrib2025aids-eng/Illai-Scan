@@ -230,7 +230,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         {scan.crop} • {scan.disease}
                       </div>
                       <div className="text-[11px] text-gray-500 mt-0.5">
-                        {scan.confidence}% {localization.t('result.confidence')} •{' '}
                         {localization.t('home.today')}
                       </div>
                     </div>

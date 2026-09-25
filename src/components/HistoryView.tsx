@@ -95,9 +95,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   </h4>
 
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-semibold text-gray-500">
-                      {scan.confidence}% {localization.t('result.confidence')}
-                    </span>
                     {scan.isHealthy ? (
                       <span className="flex items-center gap-0.5 text-[10px] text-emerald-700 font-bold">
                         <CheckCircle2 className="w-3 h-3" />

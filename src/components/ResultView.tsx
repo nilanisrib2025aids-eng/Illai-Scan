@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import {
   Volume2,
   Square,
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
-  CheckCircle,
   Scissors,
   Droplets,
   Wind,
@@ -76,8 +74,6 @@ export const ResultView: React.FC<ResultViewProps> = ({
             'treatment.organic_subtitle'
           )}`
         : `${result.crop}. ${result.disease}. ${localization.t(
-            'result.confidence'
-          )}: ${result.confidence}%. ${localization.t(
             'treatment.organic_header'
           )}: ${result.organicTreatments[0]?.title}. ${result.organicTreatments[0]?.desc}`;
 
@@ -149,56 +145,21 @@ export const ResultView: React.FC<ResultViewProps> = ({
             </div>
           </div>
 
-          {/* Disease Headline & Confidence */}
+          {/* Disease Headline & AI Badge */}
           <div className="p-4">
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full">
                 {result.crop}
               </span>
-              <div className="flex items-center gap-1 text-xs font-semibold text-gray-600">
-                <span>{localization.t('result.confidence')}:</span>
-                <span className="font-bold text-gray-900">{result.confidence}%</span>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100/80">
+                <Sparkles className="w-3 h-3 text-emerald-600" />
+                <span>AI Verified</span>
               </div>
             </div>
 
             <h2 className="text-xl font-bold text-gray-900 leading-tight">
               {result.disease}
             </h2>
-
-            {result.modelName && (
-              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                <span>Vision Model: {result.modelName}</span>
-              </div>
-            )}
-
-            {/* Confidence Status Badge */}
-            <div className="mt-2.5">
-              {result.confidenceTier === 'high' && (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-semibold">
-                    {localization.t('result.high_confidence')}
-                  </span>
-                </div>
-              )}
-              {result.confidenceTier === 'moderate' && (
-                <div className="flex items-center gap-1.5 text-xs text-amber-900 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span className="font-semibold">
-                    {localization.t('result.moderate_confidence')}
-                  </span>
-                </div>
-              )}
-              {result.confidenceTier === 'low' && (
-                <div className="flex items-center gap-1.5 text-xs text-red-900 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
-                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span className="font-semibold">
-                    {localization.t('result.low_confidence')}
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
