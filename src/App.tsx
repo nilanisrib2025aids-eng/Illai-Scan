@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Camera, History, HelpCircle } from 'lucide-react';
+import { Home, Camera, History, HelpCircle, User } from 'lucide-react';
 import { localization } from './services/localizationService';
 import { historyService } from './services/historyService';
 import { diseaseDetectionService } from './services/diseaseDetectionService';
@@ -9,14 +9,15 @@ import { HomeView } from './components/HomeView';
 import { ScanView } from './components/ScanView';
 import { ResultView } from './components/ResultView';
 import { HistoryView } from './components/HistoryView';
+import { LoginPage } from './components/LoginPage';
 import { SettingsModal } from './components/SettingsModal';
 import { HelpModal } from './components/HelpModal';
 import { VoiceAssistantModal } from './components/VoiceAssistantModal';
 import { AuthModal } from './components/AuthModal';
 
 export const App: React.FC = () => {
-  // Navigation tabs: 'home' | 'scan' | 'history' | 'help' | 'result'
-  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'history' | 'help' | 'result'>('home');
+  // Navigation tabs: 'home' | 'scan' | 'history' | 'help' | 'result' | 'login'
+  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'history' | 'help' | 'result' | 'login'>('home');
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
   const [recentScans, setRecentScans] = useState<ScanResult[]>([]);
 
@@ -91,7 +92,7 @@ export const App: React.FC = () => {
               onOpenVoice={() => handleOpenVoiceWithContext()}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenHelp={() => setIsHelpOpen(true)}
-              onOpenAuth={() => setIsAuthOpen(true)}
+              onOpenAuth={() => setActiveTab('login')}
               onSelectScan={(scan) => {
                 setSelectedScan(scan);
                 setActiveTab('result');
@@ -128,10 +129,20 @@ export const App: React.FC = () => {
               onClearHistory={() => setRecentScans([])}
             />
           )}
+
+          {activeTab === 'login' && (
+            <LoginPage
+              currentFarmer={currentFarmer}
+              onSuccess={(farmer) => {
+                setCurrentFarmer(farmer);
+              }}
+              onBackToHome={() => setActiveTab('home')}
+            />
+          )}
         </div>
 
         {/* Farmer-friendly Bottom Navigation Bar */}
-        <div className="h-16 bg-white border-t border-gray-200 px-6 flex items-center justify-between z-20 shrink-0 shadow-lg">
+        <div className="h-16 bg-white border-t border-gray-200 px-4 flex items-center justify-between z-20 shrink-0 shadow-lg">
           {/* Home */}
           <button
             onClick={() => setActiveTab('home')}
@@ -143,6 +154,19 @@ export const App: React.FC = () => {
           >
             <Home className="w-5 h-5" />
             <span className="text-[10px] tracking-tight">{localization.t('nav.home')}</span>
+          </button>
+
+          {/* History */}
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex flex-col items-center gap-1 transition ${
+              activeTab === 'history'
+                ? 'text-emerald-800 font-bold'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">{localization.t('nav.history')}</span>
           </button>
 
           {/* Central Scan Action Button */}
@@ -158,17 +182,19 @@ export const App: React.FC = () => {
             <Camera className="w-6 h-6" />
           </button>
 
-          {/* History */}
+          {/* Farmer Login / ID Page Tab */}
           <button
-            onClick={() => setActiveTab('history')}
+            onClick={() => setActiveTab('login')}
             className={`flex flex-col items-center gap-1 transition ${
-              activeTab === 'history'
+              activeTab === 'login'
                 ? 'text-emerald-800 font-bold'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <History className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{localization.t('nav.history')}</span>
+            <User className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">
+              {currentFarmer ? 'My ID' : 'Login'}
+            </span>
           </button>
 
           {/* Help */}
@@ -191,7 +217,7 @@ export const App: React.FC = () => {
           }}
           onOpenAuth={() => {
             setIsSettingsOpen(false);
-            setIsAuthOpen(true);
+            setActiveTab('login');
           }}
           currentFarmer={currentFarmer}
         />
