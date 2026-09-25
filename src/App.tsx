@@ -13,7 +13,6 @@ import { LoginPage } from './components/LoginPage';
 import { SettingsModal } from './components/SettingsModal';
 import { HelpModal } from './components/HelpModal';
 import { VoiceAssistantModal } from './components/VoiceAssistantModal';
-import { AuthModal } from './components/AuthModal';
 
 export const App: React.FC = () => {
   // Navigation tabs: 'home' | 'scan' | 'history' | 'help' | 'result' | 'login'
@@ -23,7 +22,6 @@ export const App: React.FC = () => {
 
   // Farmer Authentication & Profile State
   const [currentFarmer, setCurrentFarmer] = useState<FarmerProfile | null>(authService.getCurrentFarmer());
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -146,7 +144,7 @@ export const App: React.FC = () => {
           {/* Home */}
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center gap-1 transition ${
+            className={`flex flex-col items-center gap-1 transition cursor-pointer ${
               activeTab === 'home'
                 ? 'text-emerald-800 font-bold'
                 : 'text-gray-500 hover:text-gray-700'
@@ -159,7 +157,7 @@ export const App: React.FC = () => {
           {/* History */}
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex flex-col items-center gap-1 transition ${
+            className={`flex flex-col items-center gap-1 transition cursor-pointer ${
               activeTab === 'history'
                 ? 'text-emerald-800 font-bold'
                 : 'text-gray-500 hover:text-gray-700'
@@ -172,7 +170,7 @@ export const App: React.FC = () => {
           {/* Central Scan Action Button */}
           <button
             onClick={() => setActiveTab('scan')}
-            className={`-mt-5 w-12 h-12 rounded-full flex items-center justify-center shadow-md transition ${
+            className={`-mt-5 w-12 h-12 rounded-full flex items-center justify-center shadow-md transition cursor-pointer ${
               activeTab === 'scan'
                 ? 'bg-emerald-900 text-white ring-4 ring-emerald-100'
                 : 'bg-emerald-800 hover:bg-emerald-900 text-white'
@@ -182,10 +180,10 @@ export const App: React.FC = () => {
             <Camera className="w-6 h-6" />
           </button>
 
-          {/* Farmer Login / ID Page Tab */}
+          {/* Farmer Login Page Tab */}
           <button
             onClick={() => setActiveTab('login')}
-            className={`flex flex-col items-center gap-1 transition ${
+            className={`flex flex-col items-center gap-1 transition cursor-pointer ${
               activeTab === 'login'
                 ? 'text-emerald-800 font-bold'
                 : 'text-gray-500 hover:text-gray-700'
@@ -200,7 +198,7 @@ export const App: React.FC = () => {
           {/* Help */}
           <button
             onClick={() => setIsHelpOpen(true)}
-            className="flex flex-col items-center gap-1 text-gray-500 hover:text-emerald-800 transition"
+            className="flex flex-col items-center gap-1 text-gray-500 hover:text-emerald-800 transition cursor-pointer"
           >
             <HelpCircle className="w-5 h-5" />
             <span className="text-[10px] tracking-tight">{localization.t('nav.help')}</span>
@@ -231,14 +229,6 @@ export const App: React.FC = () => {
           isOpen={isVoiceOpen}
           onClose={() => setIsVoiceOpen(false)}
           cropContext={voiceCropContext}
-        />
-
-        <AuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onSuccess={(farmer) => {
-            setCurrentFarmer(farmer);
-          }}
         />
       </div>
     </div>

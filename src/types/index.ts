@@ -61,7 +61,9 @@ export interface VoiceMessage {
 
 export interface FarmerProfile {
   farmerId: string;       // e.g. "TN-FARM-8291"
-  name: string;           // Farmer's name
+  username: string;       // Chosen username for login
+  password: string;       // Chosen password for login
+  name: string;           // Farmer's full name
   phone: string;          // 10-digit mobile number
   state: string;          // State / Region (e.g. Tamil Nadu, Karnataka, Andhra Pradesh, etc.)
   district?: string;      // District / Taluk

@@ -57,15 +57,37 @@ export class AuthService {
   }
 
   public register(params: {
+    username: string;
+    password: string;
     name: string;
     phone: string;
     state: string;
     district?: string;
     primaryCrop?: string;
-  }): FarmerProfile {
+  }): { success: boolean; profile?: FarmerProfile; error?: string } {
+    const trimmedUsername = params.username.trim();
+    const trimmedPassword = params.password.trim();
+
+    if (!trimmedUsername) {
+      return { success: false, error: 'Username is required' };
+    }
+    if (trimmedPassword.length < 4) {
+      return { success: false, error: 'Password must be at least 4 characters' };
+    }
+
+    const all = this.getAllRegisteredFarmers();
+    const exists = all.some(
+      (f) => f.username.toLowerCase() === trimmedUsername.toLowerCase()
+    );
+    if (exists) {
+      return { success: false, error: 'Username already taken. Please choose another one.' };
+    }
+
     const farmerId = generateFarmerId(params.state, params.name);
     const newProfile: FarmerProfile = {
       farmerId,
+      username: trimmedUsername,
+      password: trimmedPassword,
       name: params.name.trim(),
       phone: params.phone.trim(),
       state: params.state.trim(),
@@ -74,22 +96,52 @@ export class AuthService {
       createdAt: Date.now()
     };
 
-    // Save current active farmer
-    this.currentFarmer = newProfile;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
-
     // Save in directory of all farmers on this device
     try {
-      const existingAll = this.getAllRegisteredFarmers();
-      const filtered = existingAll.filter(f => f.farmerId !== farmerId && f.phone !== newProfile.phone);
-      filtered.push(newProfile);
-      localStorage.setItem(ALL_FARMERS_KEY, JSON.stringify(filtered));
+      all.push(newProfile);
+      localStorage.setItem(ALL_FARMERS_KEY, JSON.stringify(all));
     } catch {
       // ignore storage error
     }
 
+    return { success: true, profile: newProfile };
+  }
+
+  public verifyCredentials(
+    usernameOrId: string,
+    password: string
+  ): { success: boolean; profile?: FarmerProfile; error?: string } {
+    const trimmedInput = usernameOrId.trim();
+    const trimmedPass = password.trim();
+
+    if (!trimmedInput) {
+      return { success: false, error: 'Please enter your username, Farmer ID, or phone number' };
+    }
+    if (!trimmedPass) {
+      return { success: false, error: 'Please enter your password' };
+    }
+
+    const all = this.getAllRegisteredFarmers();
+    const found = all.find(
+      (f) =>
+        (f.username && f.username.toLowerCase() === trimmedInput.toLowerCase()) ||
+        (f.farmerId && f.farmerId.toUpperCase() === trimmedInput.toUpperCase()) ||
+        (f.phone && f.phone === trimmedInput)
+    );
+
+    if (!found) {
+      return { success: false, error: 'Account not found. Please create an account first.' };
+    }
+
+    if (found.password && found.password !== trimmedPass) {
+      return { success: false, error: 'Incorrect password. Please try again.' };
+    }
+
+    // Set current active farmer
+    this.currentFarmer = found;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
     this.notify();
-    return newProfile;
+    return { success: true, profile: found };
   }
 
   public loginWithFarmerId(farmerId: string): FarmerProfile | null {
@@ -108,13 +160,20 @@ export class AuthService {
   }
 
   public loginAsGuest(name: string = 'Kisan Mitra'): FarmerProfile {
-    return this.register({
+    const reg = this.register({
+      username: 'guest_' + Date.now().toString().slice(-4),
+      password: 'kisan',
       name,
       phone: '9876543210',
       state: 'Tamil Nadu',
       district: 'Thanjavur',
       primaryCrop: 'Banana'
     });
+    const profile = reg.profile!;
+    this.currentFarmer = profile;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    this.notify();
+    return profile;
   }
 
   public logout(): void {
