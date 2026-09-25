@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { localization } from '../services/localizationService';
 import type { ScanResult, FarmerProfile } from '../types';
-import { CROPS_LIST, AGRICULTURAL_DISEASE_DB } from '../data/agriculturalDb';
+import { AGRICULTURAL_DISEASE_DB } from '../data/agriculturalDb';
 
 interface HomeViewProps {
   onStartScan: () => void;
@@ -220,24 +220,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
                 </div>
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* SUPPORTED CROPS */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
-            {localization.t('home.supported_crops')}
-          </h3>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {CROPS_LIST.map((c) => (
-              <div
-                key={c.id}
-                className="bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-xs flex items-center gap-1.5 shrink-0 text-xs font-medium text-gray-800"
-              >
-                <span>{c.icon}</span>
-                <span>{localization.t(c.nameKey)}</span>
-              </div>
             ))}
           </div>
         </div>
