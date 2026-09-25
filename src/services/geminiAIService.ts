@@ -4,7 +4,10 @@ import { localization } from './localizationService';
 const GEMINI_API_KEY_STORAGE = 'ilai_scan_gemini_api_key';
 
 const GEMINI_MODELS = [
+  'gemini-3.1-flash-lite',
   'gemini-3.8-flash',
+  'gemini-3.5-flash',
+  'gemini-3.6-flash',
   'gemini-3.5-flash-lite',
   'gemini-flash-latest'
 ];
@@ -269,11 +272,12 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
       `FARMER CONTEXT:\n` +
       `- Active Crop Context: ${cropContext ? cropContext : 'General field crop / garden'}\n` +
       `BEHAVIOR & TONE RULES:\n` +
-      `1. Be human, warm, respectful, and encouraging. Never sound like a robotic FAQ or canned script.\n` +
-      `2. Give practical, immediately actionable advice: exact dosage (e.g., 5ml neem oil per liter water, 30ml Panchagavya per liter), optimal spray timing (early morning or late evening), and field sanitation.\n` +
-      `3. Prioritize natural, organic, and low-cost eco-friendly remedies (Neem oil, Panchagavya, Jeevamrutha, Trichoderma viride, Beauveria bassiana, yellow sticky traps, light traps, cow urine spray, wood ash).\n` +
-      `4. If chemical controls are mentioned, advise them only as a secondary emergency resort and always emphasize protective masks, gloves, and safe withholding periods before harvest.\n` +
-      `5. Keep the formatting clean and readable: use short paragraphs, bullet points, or numbered steps so it is easy to read or listen to on a mobile screen.`;
+      `1. Directly and specifically answer whatever the user asks. If the user asks a greeting (e.g., "How are you?", "வணக்கம்", "नमस्ते"), warmly greet them back as their agricultural companion and ask how their crops or fields are doing.\n` +
+      `2. If they ask about a specific crop, symptom, pest, fertilizer, or farming practice, answer that exact topic with accurate, practical advice.\n` +
+      `3. Give practical, immediately actionable advice: exact dosage (e.g., 5ml neem oil per liter water, 30ml Panchagavya per liter), optimal spray timing (early morning or late evening), and field sanitation.\n` +
+      `4. Prioritize natural, organic, and low-cost eco-friendly remedies (Neem oil, Panchagavya, Jeevamrutha, Trichoderma viride, Beauveria bassiana, yellow sticky traps, light traps, cow urine spray, wood ash).\n` +
+      `5. If chemical controls are mentioned, advise them only as a secondary emergency resort and always emphasize protective masks, gloves, and safe withholding periods before harvest.\n` +
+      `6. Keep the formatting clean and readable: use short paragraphs, bullet points, or numbered steps so it is easy to read or listen to on a mobile screen.`;
 
     // Construct conversation history for Gemini API
     const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
@@ -290,12 +294,12 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
       }
     }
 
-    // Append current user question with system context grounding
+    // Append current user question
     contents.push({
       role: 'user',
       parts: [
         {
-          text: `[SYSTEM INSTRUCTION: ${systemInstruction}]\n\nFarmer's Question: ${userQuestion}`
+          text: userQuestion
         }
       ]
     });
@@ -303,19 +307,26 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
     for (const model of GEMINI_MODELS) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const requestBody = {
+          systemInstruction: {
+            parts: [{ text: systemInstruction }]
+          },
+          contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800
+          }
+        };
+
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 800
-            }
-          })
+          body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          console.warn(`[Gemini AI] Model ${model} returned HTTP ${response.status}:`, errData);
           continue;
         }
 
@@ -324,7 +335,8 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
         if (text && text.trim()) {
           return text.trim();
         }
-      } catch {
+      } catch (e) {
+        console.warn(`[Gemini AI] Model ${model} request error:`, e);
         continue;
       }
     }

@@ -158,6 +158,9 @@ export class VoiceAssistantService {
 
     // English responses
     if (lang === 'en') {
+      if (q.includes('how are you') || q.includes('hello') || q.includes('hi ') || q === 'hi') {
+        return 'Hello! I am doing great and ready to assist you. How are your crops doing today? Feel free to ask any farming question or describe what you see on your leaves.';
+      }
       if (q.includes('spot') || q.includes('black') || q.includes('blight') || q.includes('yellow')) {
         return 'For leaf spots or yellowing, check under the leaves first. Pinch off heavily infected leaves to stop fungal spread. You can spray 5% neem oil solution (50ml in 10 liters water) during cool morning hours. Avoid wetting leaves when watering.';
       }
@@ -170,11 +173,14 @@ export class VoiceAssistantService {
       if (q.includes('curl') || q.includes('chilli') || q.includes('fly')) {
         return 'Leaf curling in chilli is usually caused by whiteflies or thrips. Install 12 yellow sticky traps per acre and spray Agniastra or garlic-chilli extract. Plant maize around your plot boundary as a living barrier.';
       }
-      return 'I understand your concern for your crop. The best starting step is to inspect the leaf closely or take a photo using Scan Leaf. Organic remedies like neem spray, bio-fungicides like Trichoderma, and proper drainage help most common problems.';
+      return 'I understand your query regarding your crops. To give you the most accurate answer, you can also take a close-up photo of the leaf using the Scan feature, or tell me the crop name and what symptoms you see.';
     }
 
     // Tamil responses
     if (lang === 'ta') {
+      if (q.includes('how are you') || q.includes('வணக்கம்') || q.includes('நலமா') || q.includes('hello') || q.includes('hi ') || q === 'hi') {
+        return 'வணக்கம்! நான் நலமாக இருக்கிறேன், நன்றி. உங்கள் விவசாயத் தோழனாக உதவ எப்போதும் தயாராக உள்ளேன். உங்கள் பயிர்கள் எப்படி உள்ளன? உங்கள் கேள்விகளைக் கேளுங்கள்!';
+      }
       if (q.includes('புள்ளி') || q.includes('மஞ்சள்') || q.includes('கருகல்') || q.includes('spot') || q.includes('blight')) {
         return 'இலைகளில் கருகல் அல்லது கருப்புப் புள்ளிகள் இருந்தால், பாதிக்கப்பட்ட கீழ் இலைகளை உடனடியாக கிள்ளி எடுத்து எரிக்கவும் அல்லது குழிதோண்டி புதைக்கவும். 10 லிட்டர் தண்ணீருக்கு 50 மிலி வேப்பெண்ணெய் கலந்து காலை வேளையில் தெளிக்கவும். இலைகளில் தண்ணீர் படாமல் வேருக்கு மட்டும் பாசனம் செய்யவும்.';
       }
@@ -187,11 +193,14 @@ export class VoiceAssistantService {
       if (q.includes('மிளகாய்') || q.includes('சுருட்டல்') || q.includes('ஈ')) {
         return 'மிளகாயில் இலை சுருட்டல் வர காரணம் வெள்ளை ஈக்கள் ஆகும். ஏக்கருக்கு 12 மஞ்சள் ஒட்டும் பொறிகளை வைக்கவும். அக்னி அஸ்திரம் அல்லது இஞ்சி-பூண்டு-பச்சைமிளகாய் கரைசல் தயாரித்து தெளிக்கவும். வரப்புகளில் மக்காச்சோளம் பயிரிட்டு தடுப்பு ஏற்படுத்தவும்.';
       }
-      return 'உங்கள் பயிர் குறித்த கேள்வியை புரிந்துகொண்டேன். பாதிக்கப்பட்ட இலையை இலை ஸ்கேன் மூலம் படம் எடுத்து துல்லியமாக அறியலாம். வேப்பங்கொட்டை கரைசல், பஞ்சகவ்யா மற்றும் பாதிக்கப்பட்ட இலைகளை அகற்றுவது போன்ற இயற்கை முறைகள் மண்ணையும் பயிரையும் பாதுகாக்கும்.';
+      return 'உங்கள் பயிர் குறித்த கேள்வியை புரிந்துகொண்டேன். பாதிக்கப்பட்ட இலையை இலை ஸ்கேன் மூலம் படம் எடுத்து துல்லியமாக அறியலாம் அல்லது பயிரின் பெயரை குறிப்பிட்டு அறிகுறிகளை விவரிக்கவும்.';
     }
 
     // Hindi responses
     if (lang === 'hi') {
+      if (q.includes('how are you') || q.includes('नमस्ते') || q.includes('कैसे हो') || q.includes('hello') || q.includes('hi ') || q === 'hi') {
+        return 'नमस्ते किसान भाई! मैं ठीक हूँ, आपका धन्यवाद। आपकी फसलों की क्या स्थिति है? आप अपनी फसल से जुड़ा कोई भी सवाल पूछ सकते हैं!';
+      }
       if (q.includes('धब्बे') || q.includes('पीली') || q.includes('झुलसा') || q.includes('spot')) {
         return 'पत्तियों पर काले या भूरे धब्बे दिखने पर संक्रमित निचली पत्तियों को तुरंत तोड़कर खेत से दूर दबा दें। 10 लीटर पानी में 50 मिली नीम का तेल मिलाकर सुबह के समय छिड़कें। पौधों की जड़ों में पानी दें, पत्तियों पर पानी न गिराएं।';
       }
