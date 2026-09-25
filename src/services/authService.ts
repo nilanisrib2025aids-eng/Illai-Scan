@@ -77,7 +77,7 @@ export class AuthService {
 
     const all = this.getAllRegisteredFarmers();
     const exists = all.some(
-      (f) => f.username.toLowerCase() === trimmedUsername.toLowerCase()
+      (f) => f.username && f.username.toLowerCase() === trimmedUsername.toLowerCase()
     );
     if (exists) {
       return { success: false, error: 'Username already taken. Please choose another one.' };
@@ -96,7 +96,6 @@ export class AuthService {
       createdAt: Date.now()
     };
 
-    // Save in directory of all farmers on this device
     try {
       all.push(newProfile);
       localStorage.setItem(ALL_FARMERS_KEY, JSON.stringify(all));
@@ -115,7 +114,7 @@ export class AuthService {
     const trimmedPass = password.trim();
 
     if (!trimmedInput) {
-      return { success: false, error: 'Please enter your username, Farmer ID, or phone number' };
+      return { success: false, error: 'Please enter your username or Farmer ID' };
     }
     if (!trimmedPass) {
       return { success: false, error: 'Please enter your password' };
@@ -147,7 +146,7 @@ export class AuthService {
   public loginWithFarmerId(farmerId: string): FarmerProfile | null {
     const trimmed = farmerId.trim().toUpperCase();
     const all = this.getAllRegisteredFarmers();
-    const found = all.find(f => f.farmerId.toUpperCase() === trimmed || f.phone === trimmed);
+    const found = all.find(f => (f.farmerId && f.farmerId.toUpperCase() === trimmed) || f.phone === trimmed);
 
     if (found) {
       this.currentFarmer = found;

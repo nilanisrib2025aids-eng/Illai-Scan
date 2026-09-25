@@ -63,7 +63,7 @@ export interface FarmerProfile {
   farmerId: string;       // e.g. "TN-FARM-8291"
   username: string;       // Chosen username for login
   password: string;       // Chosen password for login
-  name: string;           // Farmer's full name
+  name: string;           // Farmer's name
   phone: string;          // 10-digit mobile number
   state: string;          // State / Region (e.g. Tamil Nadu, Karnataka, Andhra Pradesh, etc.)
   district?: string;      // District / Taluk
