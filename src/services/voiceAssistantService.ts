@@ -142,10 +142,14 @@ export class VoiceAssistantService {
    * Grounded agricultural reasoning assistant responses in the selected language.
    * Leverages real Gemini AI if configured, otherwise uses verified agronomic database.
    */
-  public async generateAgriculturalResponse(query: string, cropContext?: string): Promise<string> {
+  public async generateAgriculturalResponse(
+    query: string,
+    cropContext?: string,
+    history?: { sender: 'user' | 'assistant'; text: string }[]
+  ): Promise<string> {
     const { geminiAIService } = await import('./geminiAIService');
     if (geminiAIService.hasApiKey()) {
-      const liveAiAnswer = await geminiAIService.askAgriculturalAssistant(query, cropContext);
+      const liveAiAnswer = await geminiAIService.askAgriculturalAssistant(query, cropContext, history);
       if (liveAiAnswer) return liveAiAnswer;
     }
 

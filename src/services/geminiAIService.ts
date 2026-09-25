@@ -4,8 +4,8 @@ import { localization } from './localizationService';
 const GEMINI_API_KEY_STORAGE = 'ilai_scan_gemini_api_key';
 
 const GEMINI_MODELS = [
+  'gemini-3.8-flash',
   'gemini-3.5-flash-lite',
-  'gemini-3.6-flash',
   'gemini-flash-latest'
 ];
 
@@ -238,34 +238,92 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
 
   public async askAgriculturalAssistant(
     userQuestion: string,
-    cropContext?: string
+    cropContext?: string,
+    history?: { sender: 'user' | 'assistant'; text: string }[]
   ): Promise<string | null> {
     const apiKey = this.getApiKey();
     if (!apiKey) return null;
 
-    const lang = localization.getLanguage();
-    const systemPrompt = "You are 'ILAI SCAN' Agricultural Assistant, a warm, practical, knowledgeable advisor for Indian farmers.\nLanguage: Answer directly in '" + lang + "'.\nContext: " + (cropContext ? 'Current crop: ' + cropContext : 'General agriculture') + "\nRules:\n1. Focus on organic, low-cost remedies (Neem oil, Panchagavya, Jeevamrutha, Trichoderma, wood ash, companion plants).\n2. Never recommend hazardous chemical pesticides unless specifically requested, and always include safety warnings.\n3. Keep answers clear, concise, and easy to follow for farmers.";
+    const langCode = localization.getLanguage();
+    // Map language code to full language name and native script for authentic phrasing
+    const languageNames: Record<string, string> = {
+      ta: 'Tamil (தமிழ்) - speak in warm, respectful, natural Tamil phrasing used by farmers',
+      hi: 'Hindi (हिन्दी) - speak in warm, respectful, natural Hindi phrasing used by farmers',
+      te: 'Telugu (తెలుగు) - speak in warm, respectful, natural Telugu phrasing used by farmers',
+      kn: 'Kannada (ಕನ್ನಡ) - speak in warm, respectful, natural Kannada phrasing used by farmers',
+      ml: 'Malayalam (മലയാളം) - speak in warm, respectful, natural Malayalam phrasing used by farmers',
+      mr: 'Marathi (मराठी) - speak in warm, respectful, natural Marathi phrasing',
+      bn: 'Bengali (বাংলা) - speak in warm, respectful, natural Bengali phrasing',
+      gu: 'Gujarati (ગુજરાતી) - speak in warm, respectful, natural Gujarati phrasing',
+      pa: 'Punjabi (ਪੰਜਾਬੀ) - speak in warm, respectful, natural Punjabi phrasing',
+      or: 'Odia (ଓଡ଼ିଆ) - speak in warm, respectful, natural Odia phrasing',
+      as: 'Assamese (অসমীয়া) - speak in warm, respectful, natural Assamese phrasing',
+      en: 'English - speak in warm, supportive, clear English suitable for Indian agriculture'
+    };
+    const targetLanguage = languageNames[langCode] || 'the farmer\'s selected language';
+
+    const systemInstruction = 
+      `You are the 'ILAI SCAN' AI Agricultural Companion & Expert Agronomist ("விவசாயி வழிகாட்டி" / "किसान मित्र").\n` +
+      `You are having a direct conversation with a hard-working farmer. Always respond like an empathetic, highly knowledgeable, and practical human agricultural officer.\n` +
+      `CRITICAL LANGUAGE REQUIREMENT: You MUST answer strictly and completely in ${targetLanguage}. Do not default to English unless the user's selected language is English.\n` +
+      `FARMER CONTEXT:\n` +
+      `- Active Crop Context: ${cropContext ? cropContext : 'General field crop / garden'}\n` +
+      `BEHAVIOR & TONE RULES:\n` +
+      `1. Be human, warm, respectful, and encouraging. Never sound like a robotic FAQ or canned script.\n` +
+      `2. Give practical, immediately actionable advice: exact dosage (e.g., 5ml neem oil per liter water, 30ml Panchagavya per liter), optimal spray timing (early morning or late evening), and field sanitation.\n` +
+      `3. Prioritize natural, organic, and low-cost eco-friendly remedies (Neem oil, Panchagavya, Jeevamrutha, Trichoderma viride, Beauveria bassiana, yellow sticky traps, light traps, cow urine spray, wood ash).\n` +
+      `4. If chemical controls are mentioned, advise them only as a secondary emergency resort and always emphasize protective masks, gloves, and safe withholding periods before harvest.\n` +
+      `5. Keep the formatting clean and readable: use short paragraphs, bullet points, or numbered steps so it is easy to read or listen to on a mobile screen.`;
+
+    // Construct conversation history for Gemini API
+    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+
+    // System prompt included in the first turn or instruction context
+    if (history && history.length > 0) {
+      // Include past turns up to 6 recent messages
+      const recentHistory = history.slice(-6);
+      for (const msg of recentHistory) {
+        contents.push({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        });
+      }
+    }
+
+    // Append current user question with system context grounding
+    contents.push({
+      role: 'user',
+      parts: [
+        {
+          text: `[SYSTEM INSTRUCTION: ${systemInstruction}]\n\nFarmer's Question: ${userQuestion}`
+        }
+      ]
+    });
 
     for (const model of GEMINI_MODELS) {
       try {
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: systemPrompt + '\n\nFarmer Question: ' + userQuestion }
-                ]
-              }
-            ]
+            contents,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 800
+            }
           })
         });
 
+        if (!response.ok) {
+          continue;
+        }
+
         const data = await response.json();
-        const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
-        if (text) return text;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim()) {
+          return text.trim();
+        }
       } catch {
         continue;
       }

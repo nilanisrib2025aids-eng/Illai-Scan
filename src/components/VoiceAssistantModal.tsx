@@ -95,7 +95,9 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     setStatusText(localization.t('voice.processing'));
 
     try {
-      const response = await voiceAssistantService.generateAgriculturalResponse(query, cropContext);
+      // Pass previous conversational history so Gemini has multi-turn context
+      const historyTurns = messages.map(m => ({ sender: m.sender, text: m.text }));
+      const response = await voiceAssistantService.generateAgriculturalResponse(query, cropContext, historyTurns);
       const assistantMsg: VoiceMessage = {
         id: 'ast_' + Date.now(),
         sender: 'assistant',
@@ -146,13 +148,18 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
         {/* Header */}
         <div className="p-4 bg-emerald-800 text-white flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center">
-              🎙️
+            <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-lg">
+              🌱
             </div>
             <div>
-              <h2 className="text-base font-bold leading-tight">
-                {localization.t('voice.title')}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold leading-tight">
+                  {localization.t('voice.title')}
+                </h2>
+                <span className="text-[10px] bg-emerald-700/80 text-emerald-200 px-1.5 py-0.5 rounded-full font-medium">
+                  ✨ Gemini AI
+                </span>
+              </div>
               <p className="text-[11px] text-emerald-200">
                 {localization.t('app.title')}
               </p>
