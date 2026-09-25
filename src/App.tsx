@@ -3,7 +3,8 @@ import { Home, Camera, History, HelpCircle } from 'lucide-react';
 import { localization } from './services/localizationService';
 import { historyService } from './services/historyService';
 import { diseaseDetectionService } from './services/diseaseDetectionService';
-import type { ScanResult, SupportedLanguage } from './types';
+import { authService } from './services/authService';
+import type { ScanResult, SupportedLanguage, FarmerProfile } from './types';
 import { HomeView } from './components/HomeView';
 import { ScanView } from './components/ScanView';
 import { ResultView } from './components/ResultView';
@@ -11,12 +12,17 @@ import { HistoryView } from './components/HistoryView';
 import { SettingsModal } from './components/SettingsModal';
 import { HelpModal } from './components/HelpModal';
 import { VoiceAssistantModal } from './components/VoiceAssistantModal';
+import { AuthModal } from './components/AuthModal';
 
 export const App: React.FC = () => {
   // Navigation tabs: 'home' | 'scan' | 'history' | 'help' | 'result'
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'history' | 'help' | 'result'>('home');
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
   const [recentScans, setRecentScans] = useState<ScanResult[]>([]);
+
+  // Farmer Authentication & Profile State
+  const [currentFarmer, setCurrentFarmer] = useState<FarmerProfile | null>(authService.getCurrentFarmer());
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -31,6 +37,11 @@ export const App: React.FC = () => {
     // Refresh history
     setRecentScans(historyService.getHistory());
 
+    // Subscribe to auth changes
+    const unsubAuth = authService.subscribe((farmer) => {
+      setCurrentFarmer(farmer);
+    });
+
     // Subscribe to language change events
     const unsubscribe = localization.subscribe((newLang) => {
       setLangState(newLang);
@@ -38,7 +49,10 @@ export const App: React.FC = () => {
       setRecentScans(historyService.getHistory());
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubAuth();
+      unsubscribe();
+    };
   }, []);
 
   const handleScanCompleted = (result: ScanResult) => {
@@ -77,12 +91,14 @@ export const App: React.FC = () => {
               onOpenVoice={() => handleOpenVoiceWithContext()}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenHelp={() => setIsHelpOpen(true)}
+              onOpenAuth={() => setIsAuthOpen(true)}
               onSelectScan={(scan) => {
                 setSelectedScan(scan);
                 setActiveTab('result');
               }}
               onSelectDemoSample={handleSelectDemoSample}
               recentScans={recentScans}
+              currentFarmer={currentFarmer}
             />
           )}
 
@@ -173,6 +189,11 @@ export const App: React.FC = () => {
             setIsSettingsOpen(false);
             setIsHelpOpen(true);
           }}
+          onOpenAuth={() => {
+            setIsSettingsOpen(false);
+            setIsAuthOpen(true);
+          }}
+          currentFarmer={currentFarmer}
         />
 
         <HelpModal
@@ -184,6 +205,14 @@ export const App: React.FC = () => {
           isOpen={isVoiceOpen}
           onClose={() => setIsVoiceOpen(false)}
           cropContext={voiceCropContext}
+        />
+
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={(farmer) => {
+            setCurrentFarmer(farmer);
+          }}
         />
       </div>
     </div>

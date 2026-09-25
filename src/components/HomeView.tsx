@@ -6,10 +6,12 @@ import {
   ChevronRight,
   Settings,
   HelpCircle,
-  Leaf
+  Leaf,
+  UserCheck,
+  UserPlus
 } from 'lucide-react';
 import { localization } from '../services/localizationService';
-import type { ScanResult } from '../types';
+import type { ScanResult, FarmerProfile } from '../types';
 import { CROPS_LIST, AGRICULTURAL_DISEASE_DB } from '../data/agriculturalDb';
 
 interface HomeViewProps {
@@ -17,9 +19,11 @@ interface HomeViewProps {
   onOpenVoice: () => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
+  onOpenAuth: () => void;
   onSelectScan: (scan: ScanResult) => void;
   onSelectDemoSample: (sampleId: string) => void;
   recentScans: ScanResult[];
+  currentFarmer: FarmerProfile | null;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -27,9 +31,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenVoice,
   onOpenSettings,
   onOpenHelp,
+  onOpenAuth,
   onSelectScan,
   onSelectDemoSample,
-  recentScans
+  recentScans,
+  currentFarmer
 }) => {
   return (
     <div className="min-h-full pb-20 bg-gray-50">
@@ -50,6 +56,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Farmer Profile / Login Button */}
+          <button
+            onClick={onOpenAuth}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition border ${
+              currentFarmer
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                : 'bg-emerald-800 text-white hover:bg-emerald-900 border-emerald-800 shadow-xs'
+            }`}
+            title={currentFarmer ? `Kisan ID: ${currentFarmer.farmerId}` : 'Login / Create Farmer ID'}
+          >
+            {currentFarmer ? (
+              <>
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="font-mono text-[11px] font-bold">{currentFarmer.farmerId}</span>
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-3.5 h-3.5 text-white" />
+                <span className="text-[11px]">Farmer ID</span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={onOpenHelp}
             className="p-2 text-gray-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition"
@@ -72,15 +101,31 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-bold text-gray-900">
-              {localization.t('home.greeting')}
+              {currentFarmer
+                ? `Namaste, ${currentFarmer.name}`
+                : localization.t('home.greeting')}
             </div>
             <div className="text-xs text-gray-500">
-              {localization.t('home.greeting_sub')}
+              {currentFarmer
+                ? `${currentFarmer.state} • ${currentFarmer.primaryCrop || 'Farmer'}`
+                : localization.t('home.greeting_sub')}
             </div>
           </div>
-          <span className="text-xs px-2.5 py-1 bg-emerald-100/70 text-emerald-900 font-semibold rounded-full border border-emerald-200/50">
-            🌱 {localization.t('app.tagline')}
-          </span>
+          {currentFarmer ? (
+            <button
+              onClick={onOpenAuth}
+              className="text-[11px] px-2.5 py-1 bg-emerald-100/70 hover:bg-emerald-200/70 text-emerald-900 font-bold rounded-full border border-emerald-200/50 transition cursor-pointer"
+            >
+              Pass: {currentFarmer.farmerId}
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="text-[11px] px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-full transition shadow-xs cursor-pointer"
+            >
+              + Create ID
+            </button>
+          )}
         </div>
 
         {/* HERO CARD: Real Crop Image + Primary Action */}

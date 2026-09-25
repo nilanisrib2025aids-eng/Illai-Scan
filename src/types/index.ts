@@ -58,3 +58,13 @@ export interface VoiceMessage {
   text: string;
   timestamp: number;
 }
+
+export interface FarmerProfile {
+  farmerId: string;       // e.g. "TN-FARM-8291"
+  name: string;           // Farmer's name
+  phone: string;          // 10-digit mobile number
+  state: string;          // State / Region (e.g. Tamil Nadu, Karnataka, Andhra Pradesh, etc.)
+  district?: string;      // District / Taluk
+  primaryCrop?: string;   // Main crop grown (Banana, Paddy, Tomato, etc.)
+  createdAt: number;      // Registration timestamp
+}

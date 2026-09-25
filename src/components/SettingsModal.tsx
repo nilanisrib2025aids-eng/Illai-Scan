@@ -10,18 +10,23 @@ import {
   Leaf
 } from 'lucide-react';
 import { localization, SUPPORTED_LANGUAGES } from '../services/localizationService';
-import type { SupportedLanguage } from '../types';
+import { authService } from '../services/authService';
+import type { SupportedLanguage, FarmerProfile } from '../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenHelp: () => void;
+  onOpenAuth: () => void;
+  currentFarmer: FarmerProfile | null;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
-  onOpenHelp
+  onOpenHelp,
+  onOpenAuth,
+  currentFarmer
 }) => {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>(
     localization.getLanguage()
@@ -61,7 +66,66 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-6">
+        <div className="p-5 space-y-5">
+          {/* Farmer Digital ID Card Section */}
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white rounded-2xl p-4 border border-emerald-200/80 shadow-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                Farmer Identity Pass
+              </span>
+              {currentFarmer ? (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Verified
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  Guest
+                </span>
+              )}
+            </div>
+
+            {currentFarmer ? (
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900">{currentFarmer.name}</h3>
+                    <div className="text-xs font-mono font-bold text-emerald-900 mt-0.5">
+                      ID: {currentFarmer.farmerId}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      authService.logout();
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                  >
+                    Switch User
+                  </button>
+                </div>
+                <div className="mt-2 pt-2 border-t border-emerald-200/50 flex items-center justify-between text-[11px] text-gray-600">
+                  <span>📱 {currentFarmer.phone}</span>
+                  <span>📍 {currentFarmer.state}</span>
+                  <span>🌱 {currentFarmer.primaryCrop}</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-gray-600 mb-2.5 leading-relaxed">
+                  Generate your official Farmer User ID to save crop disease scan records and access personalized organic advice.
+                </p>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenAuth();
+                  }}
+                  className="w-full py-2 px-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>Create / Sign In to Farmer ID</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Language Section */}
           <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-100">
             <div className="flex items-center justify-between mb-2">
