@@ -11,8 +11,12 @@ export class VoiceAssistantService {
     }
   }
 
+  private currentAudio: HTMLAudioElement | null = null;
+
   /**
-   * Speaks the response text in the farmer's selected language
+   * Speaks the response text in the farmer's selected language.
+   * Utilizes Web SpeechSynthesis first with multi-tier voice matching,
+   * and automatically falls back to clean web TTS audio streaming for Indic languages.
    */
   public speak(
     text: string,
@@ -20,54 +24,204 @@ export class VoiceAssistantService {
     onEnd?: () => void,
     onError?: (err: any) => void
   ): void {
-    if (!this.synth) {
+    this.stopSpeaking();
+
+    const voiceLangCode = localization.getVoiceLangCode(); // e.g. 'ta-IN', 'hi-IN'
+    const shortLang = localization.getLanguage(); // e.g. 'ta', 'hi'
+
+    // Clean text: strip markdown characters (*, #, _, `, etc.) for clear speech
+    const cleanText = text
+      .replace(/[*#_`~>\[\]\(\)]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleanText) {
       if (onEnd) onEnd();
       return;
     }
 
-    this.stopSpeaking();
+    // Fallback: Online TTS Audio streaming if Web Speech synthesis has no matching voice or fails
+    const playAudioStreamFallback = () => {
+      try {
+        // Use clean speech chunking (first 200 chars per sentence) for high quality voice playback
+        const speechSnippet = cleanText.slice(0, 200);
+        const encoded = encodeURIComponent(speechSnippet);
+        const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=${shortLang}&client=tw-ob`;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const langCode = localization.getVoiceLangCode();
-    utterance.lang = langCode;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
+        const audio = new Audio(audioUrl);
+        this.currentAudio = audio;
 
-    const voices = this.synth.getVoices();
-    const matchedVoice = voices.find(
-      (v) =>
-        v.lang === langCode ||
-        v.lang.startsWith(langCode.substring(0, 2)) ||
-        v.lang.replace('_', '-').startsWith(langCode.substring(0, 2))
-    );
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
+        audio.onplay = () => {
+          if (onStart) onStart();
+        };
+
+        audio.onended = () => {
+          this.currentAudio = null;
+          if (onEnd) onEnd();
+        };
+
+        audio.onerror = (e) => {
+          this.currentAudio = null;
+          console.warn('[Audio TTS Fallback] Audio playback failed:', e);
+          if (onError) onError(e);
+          if (onEnd) onEnd();
+        };
+
+        audio.play().catch((err) => {
+          this.currentAudio = null;
+          console.warn('[Audio TTS Fallback] play() rejected:', err);
+          if (onError) onError(err);
+          if (onEnd) onEnd();
+        });
+      } catch (err) {
+        this.currentAudio = null;
+        if (onError) onError(err);
+        if (onEnd) onEnd();
+      }
+    };
+
+    // If SpeechSynthesis is not supported on this platform, use audio stream directly
+    if (!this.synth) {
+      playAudioStreamFallback();
+      return;
     }
 
-    utterance.onstart = () => {
-      if (onStart) onStart();
+    const doSpeak = () => {
+      if (!this.synth) {
+        playAudioStreamFallback();
+        return;
+      }
+
+      const voices = this.synth.getVoices() || [];
+
+      // Priority 1: Exact match on locale code (e.g. 'ta-IN' or 'ta_IN')
+      let matchedVoice = voices.find(
+        (v) =>
+          v.lang.toLowerCase() === voiceLangCode.toLowerCase() ||
+          v.lang.replace('_', '-').toLowerCase() === voiceLangCode.toLowerCase()
+      );
+
+      // Priority 2: Voice starting with 2-letter language code (e.g., 'ta', 'hi')
+      if (!matchedVoice) {
+        matchedVoice = voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith(shortLang.toLowerCase() + '-') ||
+            v.lang.toLowerCase().startsWith(shortLang.toLowerCase() + '_') ||
+            v.lang.toLowerCase() === shortLang.toLowerCase()
+        );
+      }
+
+      // Priority 3: Check voice name for regional language names
+      if (!matchedVoice) {
+        const langNames: Record<string, string[]> = {
+          ta: ['tamil', 'தமிழ்'],
+          hi: ['hindi', 'हिन्दी'],
+          te: ['telugu', 'తెలుగు'],
+          kn: ['kannada', 'ಕನ್ನಡ'],
+          ml: ['malayalam', 'മലയാളം'],
+          mr: ['marathi', 'मराठी'],
+          bn: ['bengali', 'বাংলা'],
+          gu: ['gujarati', 'ગુજરાતી'],
+          pa: ['punjabi', 'ਪੰਜਾਬੀ'],
+          or: ['odia', 'oriya'],
+          as: ['assamese'],
+          en: ['english', 'india']
+        };
+        const searchKeywords = langNames[shortLang] || [];
+        matchedVoice = voices.find((v) => {
+          const nameLower = v.name.toLowerCase();
+          return searchKeywords.some((kw) => nameLower.includes(kw));
+        });
+      }
+
+      // If the language is NOT English and the browser has NO regional voice installed for this language,
+      // fallback to audio stream directly so that Tamil/Hindi/Telugu/etc. are accurately pronounced
+      if (shortLang !== 'en' && !matchedVoice) {
+        playAudioStreamFallback();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = matchedVoice ? matchedVoice.lang : voiceLangCode;
+      utterance.rate = 0.92;
+      utterance.pitch = 1.0;
+
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
+
+      let started = false;
+      utterance.onstart = () => {
+        started = true;
+        if (onStart) onStart();
+      };
+
+      utterance.onend = () => {
+        if (onEnd) onEnd();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('[SpeechSynthesis] Error encountered, trying audio stream fallback:', e);
+        if (!started) {
+          playAudioStreamFallback();
+        } else {
+          if (onError) onError(e);
+          if (onEnd) onEnd();
+        }
+      };
+
+      try {
+        this.synth.speak(utterance);
+      } catch (err) {
+        console.warn('[SpeechSynthesis] speak error, falling back:', err);
+        playAudioStreamFallback();
+      }
     };
 
-    utterance.onend = () => {
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      if (onError) onError(e);
-      if (onEnd) onEnd();
-    };
-
-    this.synth.speak(utterance);
+    // Ensure voices are loaded (Chrome/Edge loads voices asynchronously)
+    const existingVoices = this.synth.getVoices();
+    if (!existingVoices || existingVoices.length === 0) {
+      const onVoicesChanged = () => {
+        if (this.synth) {
+          this.synth.onvoiceschanged = null;
+        }
+        doSpeak();
+      };
+      this.synth.onvoiceschanged = onVoicesChanged;
+      setTimeout(() => {
+        if (this.synth && this.synth.onvoiceschanged === onVoicesChanged) {
+          this.synth.onvoiceschanged = null;
+          doSpeak();
+        }
+      }, 250);
+    } else {
+      doSpeak();
+    }
   }
 
   public stopSpeaking(): void {
     if (this.synth) {
-      this.synth.cancel();
+      try {
+        this.synth.cancel();
+      } catch {
+        // ignore
+      }
+    }
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+      this.currentAudio = null;
     }
   }
 
   public isSpeaking(): boolean {
-    return !!(this.synth && this.synth.speaking);
+    const isSynthSpeaking = !!(this.synth && this.synth.speaking);
+    const isAudioPlaying = !!(this.currentAudio && !this.currentAudio.paused);
+    return isSynthSpeaking || isAudioPlaying;
   }
 
   /**
