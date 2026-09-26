@@ -45,7 +45,22 @@ export class GeminiAIService {
       throw new Error('MISSING_API_KEY');
     }
 
-    const lang = localization.getLanguage();
+    const langCode = localization.getLanguage();
+    const languageNames: Record<string, string> = {
+      ta: 'Tamil (தமிழ்) - strictly write all crop names, disease names, symptoms, treatments, preventions, and explanations in Tamil script',
+      hi: 'Hindi (हिन्दी) - strictly write all crop names, disease names, symptoms, treatments, preventions, and explanations in Hindi (Devanagari) script',
+      te: 'Telugu (తెలుగు) - strictly write all crop names, disease names, symptoms, treatments, preventions, and explanations in Telugu script',
+      kn: 'Kannada (ಕನ್ನಡ) - strictly write all crop names, disease names, symptoms, treatments, preventions, and explanations in Kannada script',
+      ml: 'Malayalam (മലയാളം) - strictly write all crop names, disease names, symptoms, treatments, preventions, and explanations in Malayalam script',
+      mr: 'Marathi (मराठी) - strictly write all content in Marathi script',
+      bn: 'Bengali (বাংলা) - strictly write all content in Bengali script',
+      gu: 'Gujarati (ગુજરાતી) - strictly write all content in Gujarati script',
+      pa: 'Punjabi (ਪੰਜਾਬੀ) - strictly write all content in Punjabi (Gurmukhi) script',
+      or: 'Odia (ଓଡ଼ିଆ) - strictly write all content in Odia script',
+      as: 'Assamese (অসমীয়া) - strictly write all content in Assamese script',
+      en: 'English - write all content clearly in English'
+    };
+    const targetLanguage = languageNames[langCode] || 'the farmer\'s selected language';
 
     let mimeType = 'image/jpeg';
     let base64Data = imageBase64OrUrl;
@@ -66,42 +81,49 @@ export class GeminiAIService {
       );
     }
 
-    const prompt = `You are an expert plant pathologist and agronomist for farmers.
+    const prompt = `You are an expert plant pathologist and agronomist assisting Indian farmers.
 Look closely at this plant leaf image.
+
+CRITICAL LANGUAGE INSTRUCTION:
+- You MUST generate ALL textual fields in ${targetLanguage}.
+- Every single field ("crop", "disease", "symptoms", "title", "desc", "precautions") MUST be written completely and naturally in the farmer's selected language (${langCode !== 'en' ? targetLanguage : 'English'}).
+- DO NOT mix English sentences or English descriptions into the output when the user selected a non-English language. You may keep standard scientific pathogen names in parentheses if helpful, but the disease title, symptoms, organic remedies, dosages, and prevention tips MUST be completely in the target language.
+
 Task:
-1. Identify the EXACT crop plant species (e.g. Pumpkin, Gourd, Banana, Tomato, Rice/Paddy, Potato, Cotton, Chilli, Brinjal, Papaya, Maize, Mango, Citrus, or any specific plant shown). Do NOT assume or default to any fixed crop. Look directly at the leaf structure, veins, margins, and texture.
-2. Determine if the leaf is healthy or affected by a pest or pathogen (e.g. Early Blight, Late Blight, Powdery Mildew, Downy Mildew, Leaf Curl, Bacterial Spot, Rust, Anthracnose, Nutrient Deficiency, or Healthy Crop Leaf).
-3. If healthy, set "isHealthy": true and "disease": "Healthy Crop Leaf".
-4. Language for farmer response: ${lang}.
-5. Provide actionable organic solutions as primary treatments.
+1. Identify the EXACT crop plant species (e.g. Banana/வாழை, Pumpkin/பூசணி, Tomato/தக்காளி, Rice/நெல், Potato/உருளை, Cotton/பருத்தி, Chilli/மிளகாய், Brinjal/கத்தரி, Papaya/பப்பாளி, Maize/மக்காச்சோளம், Mango/மாம்பழம், Citrus/எலுமிச்சை, or any specific plant shown). Look directly at the leaf structure, veins, margins, and texture.
+2. Determine if the leaf is healthy or affected by a pest or pathogen (e.g. Sigatoka / இலைப்புள்ளி நோய், Early Blight, Late Blight, Powdery Mildew, Downy Mildew, Leaf Curl, Bacterial Spot, Rust, Anthracnose, Nutrient Deficiency, or Healthy Crop Leaf).
+3. If healthy, set "isHealthy": true and write the disease name as Healthy Crop Leaf in the target language.
+4. Provide actionable, low-cost organic solutions (Neem oil, Panchagavya, Trichoderma, Pseudomonas, wood ash, pruning) with exact practical dosages in the target language.
 
 Respond strictly in valid JSON format matching this schema:
 {
-  "crop": "Exact Crop Name",
-  "disease": "Disease Name or Healthy Crop Leaf",
-  "isHealthy": true,
+  "crop": "Crop Name in target language",
+  "disease": "Disease Name in target language",
+  "isHealthy": false,
   "confidence": 94,
   "symptoms": [
-    "Clear symptom observed on this leaf"
+    "Symptom 1 in target language",
+    "Symptom 2 in target language",
+    "Symptom 3 in target language"
   ],
   "organicTreatments": [
     {
-      "title": "Clear organic action (e.g. Neem seed kernel extract, Panchagavya, Trichoderma viride, pruning)",
-      "desc": "Step-by-step instructions with dosage and application timing",
+      "title": "Treatment Title in target language (e.g. சூடோமோனாஸ் தெளிப்பு / வேப்பெண்ணெய் கரைசல்)",
+      "desc": "Step-by-step instructions with exact dosage (e.g. 1 லிட்டர் தண்ணீருக்கு 10 கிராம்) and spray timing in target language",
       "icon": "Scissors"
     }
   ],
   "prevention": [
     {
-      "title": "Field prevention practice",
-      "desc": "How to prevent this issue in the field",
+      "title": "Prevention Title in target language",
+      "desc": "How to prevent this in the field in target language",
       "icon": "ShieldCheck"
     }
   ],
   "chemicalFallback": {
-    "title": "Emergency chemical recommendation (SECONDARY OPTION ONLY)",
-    "desc": "Recommended labeled fungicide/insecticide dosage per liter",
-    "precautions": "Mandatory safety gear (rubber gloves, mask), avoid water bodies."
+    "title": "Emergency chemical recommendation in target language",
+    "desc": "Labeled chemical dosage per liter in target language",
+    "precautions": "Safety gear warnings (gloves, mask) in target language"
   }
 }
 CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or conversational text outside JSON.`;
@@ -186,42 +208,42 @@ CRITICAL RULE: Respond ONLY with valid JSON. Do not include markdown preamble or
           imageUri: imageBase64OrUrl,
           timestamp: Date.now(),
           symptoms: Array.isArray(parsed.symptoms) ? parsed.symptoms : [],
-          organicTreatments: Array.isArray(parsed.organicTreatments)
+          organicTreatments: Array.isArray(parsed.organicTreatments) && parsed.organicTreatments.length > 0
             ? parsed.organicTreatments.map((t: any) => ({
-                title: t.title || 'Organic Treatment',
-                desc: t.desc || '',
+                title: t.title || localization.t('organic.healthy_t1_title'),
+                desc: t.desc || localization.t('organic.healthy_t1_desc'),
                 icon: t.icon || 'Scissors'
               }))
             : [
                 {
-                  title: 'Natural Plant Health Care',
-                  desc: 'Spray cold-pressed neem oil (5ml/L) or fermented Panchagavya (30ml/L) in the early morning.',
+                  title: localization.t('organic.healthy_t1_title'),
+                  desc: localization.t('organic.healthy_t1_desc'),
                   icon: 'Scissors'
                 }
               ],
-          prevention: Array.isArray(parsed.prevention)
+          prevention: Array.isArray(parsed.prevention) && parsed.prevention.length > 0
             ? parsed.prevention.map((p: any) => ({
-                title: p.title || 'Field Prevention',
-                desc: p.desc || '',
+                title: p.title || localization.t('prevention.healthy_p1_title'),
+                desc: p.desc || localization.t('prevention.healthy_p1_desc'),
                 icon: p.icon || 'ShieldCheck'
               }))
             : [
                 {
-                  title: 'Field Sanitation & Crop Care',
-                  desc: 'Maintain clean field borders, proper spacing, and monitor leaves weekly.',
+                  title: localization.t('prevention.healthy_p1_title'),
+                  desc: localization.t('prevention.healthy_p1_desc'),
                   icon: 'ShieldCheck'
                 }
               ],
           chemicalFallback: parsed.chemicalFallback && typeof parsed.chemicalFallback === 'object' && !Array.isArray(parsed.chemicalFallback)
             ? {
-                title: parsed.chemicalFallback.title || 'Consult Local Agricultural Officer',
-                desc: parsed.chemicalFallback.desc || 'Use approved agrochemicals only as a secondary emergency recourse.',
-                precautions: parsed.chemicalFallback.precautions || 'Wear safety mask and gloves during application.'
+                title: parsed.chemicalFallback.title || localization.t('chemical.healthy_none_title'),
+                desc: parsed.chemicalFallback.desc || localization.t('chemical.healthy_none_desc'),
+                precautions: parsed.chemicalFallback.precautions || localization.t('chemical.general_precautions')
               }
             : {
-                title: 'Consult Local Agronomist (Emergency Fallback)',
-                desc: 'Use registered plant protection chemicals only under expert guidance.',
-                precautions: 'Wear protective mask and gloves.'
+                title: localization.t('chemical.healthy_none_title'),
+                desc: localization.t('chemical.healthy_none_desc'),
+                precautions: localization.t('chemical.general_precautions')
               },
           aiExplanation: cropName + ': ' + diseaseName,
           modelName: 'Google Gemini Multimodal AI'
